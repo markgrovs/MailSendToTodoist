@@ -4,18 +4,28 @@ property defaultProjectName : "Inbox"
 property appName : "Send to Todoist from Mac Mail"
 property appDomain : "us.markgroves"
 
-on alfred_script(q)
-	-- Add need Todoist item based on Input
-	set RS to my addItem(q, "")
 
+on alfred_script(q)
+	
+	set date_string to ""
+	if q contains "d:" then
+		-- pull out due date string
+		set date_string to text ((offset of "d:" in q) + 2) thru -1 of q
+		set q to text 1 thru ((offset of "d:" in q) - 2) of q
+	end if
+	log ("date_string: " & date_string)
+	log ("query: " & q)
+	-- Add need Todoist item based on Input
+	set RS to my addItem(q, "", date_string)
+	
 	-- Retrieve link from Mail
 	set link to my get_link()
 	log "link: " & link
-
+	
 	-- Add link as a note in Todoist
 	my addNote(RS, link)
 	return q
-
+	
 end alfred_script
 
 
@@ -66,11 +76,14 @@ on get_link()
 end get_link
 
 
-on addItem(itemContent, projectName)
+on addItem(itemContent, projectName, date_string)
 	log "addItem()"
 	
-	
-	set Response to my todoistRequest("addItem?priority=1&content=" & itemContent, apiToken)
+	if date_string is "" then
+		set Response to my todoistRequest("addItem?priority=1&content=" & itemContent, apiToken)
+	else
+		set Response to my todoistRequest("addItem?priority=1&content=" & itemContent & "&date_string=" & date_string, apiToken)
+	end if
 	log "Response: " & Response
 	return Response
 	
